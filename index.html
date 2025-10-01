@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>訓練紀錄（送到你的 Google 表單）</title>
+  <style>
+    :root{
+      --bg0:#06080f;
+      --bg1:#0b0f19;
+      --card:#0f1421cc;
+      --ink:#eaf0ff;
+      --muted:#9fb0d0;
+      --border:#1c2440;
+      --brand:#7aa2ff;
+      --brand-2:#b794f4;
+      --brand-3:#39d98a;
+      --radius:16px;
+      --shadow:0 8px 32px rgba(0,0,0,.45);
+      --fs-h1:clamp(18px,5vw,22px);
+      --fs-base:15px;
+      --fs-label:13px;
+      --gap:14px;
+    }
+    @media(min-width:640px){:root{--fs-base:16px;--gap:16px}}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,"Noto Sans TC",Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg0);}
+    .wrap{max-width:840px;margin:24px auto 56px;padding:0 16px;}
+    .card{position:relative;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);background:var(--card);backdrop-filter:blur(12px) saturate(120%);border:1px solid var(--border);}
+    header{padding:16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;justify-content:space-between}
+    h1{font-size:var(--fs-h1);margin:0;letter-spacing:.2px;color:var(--brand)}
+    .hint{color:var(--muted);font-size:12px}
+    .btn{appearance:none;border:1px solid transparent;border-radius:12px;cursor:pointer;font-weight:700;padding:10px 14px;transition:transform .12s ease,box-shadow .2s ease}
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{background:linear-gradient(90deg,var(--brand),var(--brand-2));color:#0b0d12;box-shadow:0 0 16px #7aa2ff44}
+    .btn-outline{background:transparent;color:var(--ink);border:1px solid #2a3560}
+    .btn-outline:hover{background:#151b31}
+    form{padding:16px;display:grid;gap:var(--gap)}
+    label{font-size:var(--fs-label);color:var(--muted);margin-bottom:6px;display:block}
+    input,textarea{width:100%;background:linear-gradient(180deg,#0b1222,#0a101c);color:var(--ink);border:1px solid #1e2748;border-radius:12px;padding:14px;font-size:var(--fs-base);outline:none}
+    textarea{min-height:120px;resize:vertical}
+    input:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px #7aa2ff44}
+    .row{display:grid;grid-template-columns:1fr;gap:var(--gap)}
+    @media(min-width:480px){.row{grid-template-columns:1fr 1fr}}
+    .actions{display:flex;gap:10px;align-items:center;justify-content:flex-end;padding:0 16px 16px}
+    .msg{padding:12px 16px;border-top:1px solid var(--border);font-size:14px;display:none}
+    .msg.ok{color:#b6f3c9}.msg.err{color:#ffb3b3}
+    .panel{display:none}.panel.show{display:block}
+    .settings{padding:16px;background:var(--bg1)}
+    .help{font-size:12px;color:var(--muted);line-height:1.5}
+    .mono{font-family:ui-monospace,Menlo,Monaco,Consolas,monospace;font-size:12px;color:#c9d4f5}
+    .table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+    .table th,.table td{border:1px solid var(--border);padding:6px 8px;text-align:left}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <header>
+      <div>
+        <h1>訓練紀錄 → Google 試算表</h1>
+        <div class="hint" id="subhint">免後端、免資料庫。使用 Google 表單自動 Timestamp。</div>
+      </div>
+      <div style="display:flex; gap:8px">
+        <button id="btnToLog" class="btn btn-outline" style="display:none">返回紀錄</button>
+        <button id="btnToSettings" class="btn btn-outline">設定</button>
+      </div>
+    </header>
+
+    <section id="settingsPanel" class="panel settings">
+      <label for="prefillUrl">貼上你的 <b>預先填答連結</b></label>
+      <input id="prefillUrl" placeholder="https://docs.google.com/forms/d/e/.../viewform?..." />
+      <div class="actions" style="padding:12px 0 0"><button id="oneClickSetup" class="btn btn-primary">解析並儲存</button></div>
+      <div id="parseResult" style="display:none; margin-top:10px">
+        <table class="table"><thead><tr><th>數字</th><th>偵測到的 entry 代碼</th><th>對應欄位</th></tr></thead><tbody id="tblBody"></tbody></table>
+        <div class="help" style="margin-top:6px">對應規則：<span class="mono">1→item、2→w1、3→w2、4→w3、5→w4、6→note</span>。</div>
+      </div>
+      <details style="margin-top:12px"><summary class="help">進階設定（通常不需修改）</summary>
+        <div style="display:grid; gap:8px; margin-top:8px">
+          <label>formResponse：<input id="formUrl" class="mono" /></label>
+          <label>item：<input id="entryItem" class="mono" /></label>
+          <label>w1：<input id="entryW1" class="mono" /></label>
+          <label>w2：<input id="entryW2" class="mono" /></label>
+          <label>w3：<input id="entryW3" class="mono" /></label>
+          <label>w4：<input id="entryW4" class="mono" /></label>
+          <label>note：<input id="entryNote" class="mono" /></label>
+          <div class="actions" style="padding:0"><button id="saveSettings" class="btn btn-outline">手動儲存</button></div>
+        </div>
+      </details>
+    </section>
+
+    <section id="logPanel" class="panel show">
+      <form id="logForm" autocomplete="off">
+        <div><label for="item">item（動作）</label><input id="item" name="item" autocomplete="off" placeholder="例：滑輪下拉" /></div>
+        <div class="row">
+          <div><label for="w1">Weight1*reps</label><input id="w1" name="w1" autocomplete="off" placeholder="例：25*10" /></div>
+          <div><label for="w2">Weight2*reps</label><input id="w2" name="w2" autocomplete="off" placeholder="例：25*10" /></div>
+        </div>
+        <div class="row">
+          <div><label for="w3">Weight3*reps</label><input id="w3" name="w3" autocomplete="off" placeholder="例：20*12" /></div>
+          <div><label for="w4">Weight4*reps（可留空）</label><input id="w4" name="w4" autocomplete="off" placeholder="可空白" /></div>
+        </div>
+        <div><label for="note">How feeling / note / record（可留空）</label><textarea id="note" name="note" autocomplete="off" placeholder="例：最後一組最後力竭了！或是備註你的訓練日期"></textarea></div>
+        <div class="actions">
+          <button type="button" id="fillTemplate" class="btn btn-outline">快速填入範例</button>
+          <button type="submit" class="btn btn-primary">送出到 Google 表單</button>
+        </div>
+      </form>
+      <div id="msg" class="msg"></div>
+    </section>
+  </div>
+</div>
+<script>
+  const $=s=>document.querySelector(s);
+  const storeKey='training-logger-settings-v6';
+  const loadSettings=()=>{try{return JSON.parse(localStorage.getItem(storeKey))||{}}catch{return{}}};
+  const saveSettings=obj=>localStorage.setItem(storeKey,JSON.stringify(obj||{}));
+  function applySettingsToUI(s){$('#formUrl').value=s.formUrl||'';$('#entryItem').value=s.entryItem||'';$('#entryW1').value=s.entryW1||'';$('#entryW2').value=s.entryW2||'';$('#entryW3').value=s.entryW3||'';$('#entryW4').value=s.entryW4||'';$('#entryNote').value=s.entryNote||'';}
+  function toSettings(){$('#settingsPanel').classList.add('show');$('#logPanel').classList.remove('show');$('#btnToSettings').style.display='none';$('#btnToLog').style.display='inline-block';$('#msg').style.display='none';}
+  function toLog(){$('#settingsPanel').classList.remove('show');$('#logPanel').classList.add('show');$('#btnToSettings').style.display='inline-block';$('#btnToLog').style.display='none';$('#msg').style.display='none';}
+  $('#btnToSettings').addEventListener('click',toSettings);$('#btnToLog').addEventListener('click',toLog);(function(){applySettingsToUI(loadSettings());toLog();})();
+  function showMsg(t,ok){const el=$('#msg');el.textContent=t;el.className='msg '+(ok?'ok':'err');el.style.display='block';setTimeout(()=>{el.style.display='none';},3500)}
+  function cleanFormUrl(u){try{const x=new URL(u);x.search='';x.pathname=x.pathname.replace('/viewform','/formResponse');return x.toString()}catch{return u}}
+  function parsePrefill(url){const p=new URL(url),q=p.searchParams,e={};q.forEach((v,k)=>{if(k.startsWith('entry.'))e[k]=v});const w={'1':'entryItem','2':'entryW1','3':'entryW2','4':'entryW3','5':'entryW4','6':'entryNote','item':'entryItem','w1':'entryW1','w2':'entryW2','w3':'entryW3','w4':'entryW4','note':'entryNote'},m={};Object.keys(e).forEach(k=>{const v=String(e[k]).trim().toLowerCase();if(w[v])m[w[v]]=k});const d={entryItem:m.entryItem||'',entryW1:m.entryW1||'',entryW2:m.entryW2||'',entryW3:m.entryW3||'',entryW4:m.entryW4||'',entryNote:m.entryNote||''};p.search='';p.pathname=p.pathname.replace('/viewform','/formResponse');return{detected:d,formUrl:p.toString()}}
+  $('#oneClickSetup').addEventListener('click',()=>{const u=($('#prefillUrl').value||'').trim();if(!u){alert('請貼上預填連結');return}let r;try{r=parsePrefill(u)}catch{alert('連結格式不正確');return}const {detected,formUrl}=r,s=Object.assign({},loadSettings(),detected,{formUrl:cleanFormUrl(formUrl)});saveSettings(s);applySettingsToUI(s);const o=['item','w1','w2','w3','w4','note'],c=[detected.entryItem,detected.entryW1,detected.entryW2,detected.entryW3,detected.entryW4,detected.entryNote],rows=o.map((f,i)=>`<tr><td>${i+1}</td><td class="mono">${c[i]||'-'}</td><td>${f}</td></tr>`).join('');$('#tblBody').innerHTML=rows;$('#parseResult').style.display='block';toLog();showMsg('✅ 設定已儲存！可以開始使用了。',true)});
+  $('#saveSettings').addEventListener('click',()=>{const s={formUrl:cleanFormUrl($('#formUrl').value.trim()),entryItem:$('#entryItem').value.trim(),entryW1:$('#entryW1').value.trim(),entryW2:$('#entryW2').value.trim(),entryW3:$('#entryW3').value.trim(),entryW4:$('#entryW4').value.trim(),entryNote:$('#entryNote').value.trim()};saveSettings(s);applySettingsToUI(s);alert('已手動儲存設定')});
+  function normalizeWxR(s){if(!s)return'';return s.replace(/x|X|×/g,'*').split(' ').join('').trim()}
+  $('#logForm').addEventListener('submit',async e=>{e.preventDefault();const s=loadSettings();if(!s.formUrl){toSettings();alert('請先完成一鍵設定');return}const item=($('#item').value||'').trim(),w1=normalizeWxR($('#w1').value||''),w2=normalizeWxR($('#w2').value||''),w3=normalizeWxR($('#w3').value||''),w4=normalizeWxR($('#w4').value||''),note=($('#note').value||'').trim(),p=new URLSearchParams();if(s.entryItem&&item!=='')p.append(s.entryItem,item);if(s.entryW1&&w1!=='')p.append(s.entryW1,w1);if(s.entryW2&&w2!=='')p.append(s.entryW2,w2);if(s.entryW3&&w3!=='')p.append(s.entryW3,w3);if(s.entryW4&&w4!=='')p.append(s.entryW4,w4);if(s.entryNote&&note!=='')p.append(s.entryNote,note);const postUrl=cleanFormUrl(s.formUrl);console.log('[POST]',postUrl,p.toString());try{await fetch(postUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:p.toString()});showMsg('✅ 已送出（請到表單回應/試算表查看）',true);$('#item').value='';$('#w1').value='';$('#w2').value='';$('#w3').value='';$('#w4').value='';$('#note').value=''}catch(err){console.error(err);showMsg('送出失敗，請檢查設定或稍後再試。',false)}});
+  (function(){const q=new URLSearchParams(location.search);if(!q.toString())return;const s=loadSettings(),u={formUrl:cleanFormUrl(q.get('form')||s.formUrl),entryItem:q.get('i')||s.entryItem,entryW1:q.get('w1')||s.entryW1,entryW2:q.get('w2')||s.entryW2,entryW3:q.get('w3')||s.entryW3,entryW4:q.get('w4')||s.entryW4,entryNote:q.get('n')||s.entryNote};saveSettings(u);applySettingsToUI(u)})();
+  $('#fillTemplate')?.addEventListener('click',()=>{$('#item').value='滑輪下拉';$('#w1').value='25*10';$('#w2').value='25*10';$('#w3').value='20*12';$('#w4').value='';$('#note').value='最後一組有點抖，但穩！'});
+</script>
+</body>
+</html>
